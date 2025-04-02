@@ -10,9 +10,10 @@ ARG BASE_CUDA_RUN_CONTAINER=pytorch/pytorch:${PYTORCH_VERSION}-cuda${CUDA_VERSIO
 # ========== BUILD ==========
 FROM ${BASE_CUDA_DEV_CONTAINER} as builder
 
-ARG CPU_INSTRUCT=FANCY
-# Set CUDA architecture for your RTX 4090 and 3090 GPUs
-ARG CUDA_DOCKER_ARCH="8.6;8.9"
+# Hardcode optimizations instead of using build args
+ENV CPU_INSTRUCT=FANCY
+# Set CUDA architecture for RTX 4090 and 3090 GPUs
+ENV CUDA_DOCKER_ARCH="8.6;8.9"
 
 # Set working directory and CUDA path
 WORKDIR /workspace
@@ -55,8 +56,7 @@ RUN pip install --upgrade pip && \
 RUN pip install flash-attn
 
 # Install ktransformers with multi-GPU support and specific CUDA architectures
-RUN CPU_INSTRUCT=${CPU_INSTRUCT} \
-    USE_BALANCE_SERVE=1 \
+RUN USE_BALANCE_SERVE=1 \
     KTRANSFORMERS_FORCE_BUILD=TRUE \
     TORCH_CUDA_ARCH_LIST=${CUDA_DOCKER_ARCH} \
     pip install . --no-build-isolation --verbose
@@ -91,9 +91,6 @@ ENV KMP_AFFINITY=granularity=fine,compact,1,0
 # Add healthcheck
 HEALTHCHECK --interval=30s --timeout=30s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:10002/v1/models || exit 1
-
-# Copy the custom configuration for Deepseek-V3
-COPY configs/config.yaml /workspace/ktransformers/configs/config.yaml
 
 # Set entry point to run the server
 WORKDIR /workspace/ktransformers

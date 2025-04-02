@@ -26,3 +26,10 @@ ktransformers/tests/chat_txt.txt
 mmlu_result*
 ktransformers/ktransformers_ext/cuda_musa/
 test_prompt.txt
+
+# Deployment instructional files
+LOCAL_BUILD.md
+UNRAID_SETUP.md
+PRODUCTION_README.md
+start-ktransformers.sh
+docker-compose.yml

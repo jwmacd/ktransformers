@@ -1,0 +1,100 @@
+ARG UBUNTU_VERSION=22.04
+# This needs to generally match the container host's environment.
+ARG CUDA_VERSION=12.1
+# Target the CUDA build image
+ARG PYTORCH_VERSION=2.5.1
+ARG CUDNN_VERSION=9
+ARG BASE_CUDA_DEV_CONTAINER=pytorch/pytorch:${PYTORCH_VERSION}-cuda${CUDA_VERSION}-cudnn${CUDNN_VERSION}-devel
+ARG BASE_CUDA_RUN_CONTAINER=pytorch/pytorch:${PYTORCH_VERSION}-cuda${CUDA_VERSION}-cudnn${CUDNN_VERSION}-runtime
+
+# ========== BUILD ==========
+FROM ${BASE_CUDA_DEV_CONTAINER} as builder
+
+ARG CPU_INSTRUCT=FANCY
+# Set CUDA architecture for your RTX 4090 and 3090 GPUs
+ARG CUDA_DOCKER_ARCH="8.6;8.9"
+
+# Set working directory and CUDA path
+WORKDIR /workspace
+ENV CUDA_HOME=/usr/local/cuda
+ENV CUDA_DOCKER_ARCH=${CUDA_DOCKER_ARCH}
+
+# Install dependencies
+RUN apt update -y && apt install -y --no-install-recommends \
+    libtbb-dev \
+    libssl-dev \
+    libcurl4-openssl-dev \
+    libaio1 \
+    libaio-dev \
+    libfmt-dev \
+    libgflags-dev \
+    zlib1g-dev \
+    patchelf \
+    git \
+    wget \
+    vim \
+    gcc \
+    g++ \
+    cmake \
+    libgomp1 \
+    curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Clone the repository
+RUN git clone https://github.com/kvcache-ai/ktransformers.git 
+
+# Enter project directory and initialize submodules
+WORKDIR /workspace/ktransformers
+RUN git submodule update --init --recursive
+
+# Upgrade pip and install dependencies
+RUN pip install --upgrade pip && \
+    pip install ninja pyproject numpy cpufeature aiohttp zmq openai
+
+# Install flash-attn (install early to avoid dependency issues)
+RUN pip install flash-attn
+
+# Install ktransformers with multi-GPU support and specific CUDA architectures
+RUN CPU_INSTRUCT=${CPU_INSTRUCT} \
+    USE_BALANCE_SERVE=1 \
+    KTRANSFORMERS_FORCE_BUILD=TRUE \
+    TORCH_CUDA_ARCH_LIST=${CUDA_DOCKER_ARCH} \
+    pip install . --no-build-isolation --verbose
+
+RUN pip install third_party/custom_flashinfer/
+
+# Copy C++ runtime libraries
+RUN cp /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /opt/conda/lib/
+
+# Clean pip cache
+RUN pip cache purge
+
+# Create a directory for models
+RUN mkdir -p /workspace/models
+
+# ========== RUNTIME ==========
+FROM ${BASE_CUDA_RUN_CONTAINER}
+
+WORKDIR /workspace
+COPY --from=builder /opt/conda /opt/conda
+COPY --from=builder /workspace/ktransformers /workspace/ktransformers
+
+# Create directories for configs and models
+RUN mkdir -p /workspace/models /workspace/configs
+
+# Set environment variables for multi-GPU and performance
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV OMP_NUM_THREADS=32
+ENV MKL_NUM_THREADS=32
+ENV KMP_AFFINITY=granularity=fine,compact,1,0
+
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=30s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:10002/v1/models || exit 1
+
+# Copy the custom configuration for Deepseek-V3
+COPY configs/config.yaml /workspace/ktransformers/configs/config.yaml
+
+# Set entry point to run the server
+WORKDIR /workspace/ktransformers
+ENTRYPOINT ["python", "-m", "ktransformers.server.main"] 

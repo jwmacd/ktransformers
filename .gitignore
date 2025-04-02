@@ -26,6 +26,8 @@ ktransformers/tests/chat_txt.txt
 mmlu_result*
 ktransformers/ktransformers_ext/cuda_musa/
 test_prompt.txt
+project_context.md
+config.yaml
 
 # Deployment instructional files
 LOCAL_BUILD.md

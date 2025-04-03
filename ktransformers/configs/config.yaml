@@ -16,7 +16,7 @@ db:
   pool_size: 10
 
 user:
-  secret_key: "981f1dd2a44e27d68759d0252a486568ed43480b4e616a26e3af3709c3a7ce73"
+  secret_key: ""
   algorithm: "HS256"
 
 model:

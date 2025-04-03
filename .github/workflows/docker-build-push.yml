@@ -1,11 +1,7 @@
 name: Build and Push KTransformers Docker Image
 
 on:
-  push:
-    branches: [ main ]
-    tags: [ 'v*' ]
-  pull_request:
-    branches: [ main ]
+  # Only manual triggers, no automatic builds
   workflow_dispatch:
 
 env:

@@ -55,12 +55,17 @@ COPY . .
 RUN pip install --upgrade pip && \
     pip install ninja==1.11.1 pyproject==1.3.1 numpy==1.26.0 cpufeature==0.2.0 aiohttp==3.9.1 zmq==0.0.0 openai==1.6.1
 
-# Install flash-attn with version pinning (install early to avoid dependency issues)
-RUN pip install flash-attn==2.5.5
-
-# After installing flash-attn, save the wheel for future builds
-RUN mkdir -p /workspace/saved_wheels && \
-    find /opt/conda -name "flash_attn*.whl" -type f -exec cp {} /workspace/saved_wheels/ \; || echo "No wheel found"
+# Use pre-built flash-attn wheel (much faster) if available
+COPY saved_wheels /workspace/saved_wheels/
+RUN if [ -n "$(find /workspace/saved_wheels -name 'flash_attn*.whl' -type f 2>/dev/null)" ]; then \
+        echo "Using pre-built flash-attn wheel" && \
+        pip install /workspace/saved_wheels/flash_attn*.whl; \
+    else \
+        echo "No pre-built wheel found, installing from source (this will be slow)" && \
+        pip install flash-attn==2.5.5 && \
+        mkdir -p /workspace/saved_wheels && \
+        find /opt/conda -name "flash_attn*.whl" -type f -exec cp {} /workspace/saved_wheels/ \; || echo "No wheel found"; \
+    fi
 
 # Install flashinfer for longer context support
 RUN pip install git+https://github.com/flashinfer-ai/flashinfer.git
@@ -75,8 +80,6 @@ RUN pip install third_party/custom_flashinfer/
 
 # Copy C++ runtime libraries
 RUN cp /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /opt/conda/lib/
-
-# No need to copy wheels in the same stage
 
 # Clean pip cache
 RUN pip cache purge
@@ -107,4 +110,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=30s --retries=3 \
 
 # Set entry point to run the server
 WORKDIR /workspace/ktransformers
-ENTRYPOINT ["python", "-m", "ktransformers.server.main"] 
+ENTRYPOINT ["python", "-m", "ktransformers.server.main"]

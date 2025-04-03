@@ -1,0 +1,40 @@
+PS C:\Users\JeffreyMacDonald\Documents\github\ktransformers> docker build -f Dockerfile.production -t ghcr.io/jwmacd/ktransformers:initial .
+[+] Building 0.9s (13/27)                                                                          docker:desktop-linux
+ => [internal] load build definition from Dockerfile.production                                                    0.0s
+ => => transferring dockerfile: 3.56kB                                                                             0.0s
+ => WARN: FromAsCasing: 'as' and 'FROM' keywords' casing do not match (line 11)                                    0.0s
+ => [internal] load metadata for docker.io/pytorch/pytorch:2.5.1-cuda12.1-cudnn9-runtime                           0.3s
+ => [internal] load metadata for docker.io/pytorch/pytorch:2.5.1-cuda12.1-cudnn9-devel                             0.3s
+ => [internal] load .dockerignore                                                                                  0.0s
+ => => transferring context: 453B                                                                                  0.0s
+ => [builder  1/15] FROM docker.io/pytorch/pytorch:2.5.1-cuda12.1-cudnn9-devel@sha256:e8e63dd7baca894ba11fe1ba48a  0.0s
+ => => resolve docker.io/pytorch/pytorch:2.5.1-cuda12.1-cudnn9-devel@sha256:e8e63dd7baca894ba11fe1ba48a52a550793c  0.0s
+ => [stage-1 1/7] FROM docker.io/pytorch/pytorch:2.5.1-cuda12.1-cudnn9-runtime@sha256:831247999fbf7e08f61b3e39f6d  0.0s
+ => => resolve docker.io/pytorch/pytorch:2.5.1-cuda12.1-cudnn9-runtime@sha256:831247999fbf7e08f61b3e39f6d77ee434f  0.0s
+ => [internal] load build context                                                                                  0.0s
+ => => transferring context: 45.94kB                                                                               0.0s
+ => CACHED [stage-1 2/7] WORKDIR /workspace                                                                        0.0s
+ => CACHED [builder  2/15] WORKDIR /workspace                                                                      0.0s
+ => CACHED [builder  3/15] RUN apt update -y && apt install -y --no-install-recommends     libtbb-dev     libssl-  0.0s
+ => [builder  4/15] COPY . /workspace/ktransformers/                                                               0.1s
+ => [builder  5/15] WORKDIR /workspace/ktransformers                                                               0.0s
+ => ERROR [builder  6/15] RUN git submodule update --init --recursive                                              0.4s
+------
+ > [builder  6/15] RUN git submodule update --init --recursive:
+0.337 fatal: not a git repository (or any of the parent directories): .git
+------
+
+ 1 warning found (use docker --debug to expand):
+ - FromAsCasing: 'as' and 'FROM' keywords' casing do not match (line 11)
+Dockerfile.production:49
+--------------------
+  47 |     # Enter project directory and initialize submodules
+  48 |     WORKDIR /workspace/ktransformers
+  49 | >>> RUN git submodule update --init --recursive
+  50 |
+  51 |     # Upgrade pip and install dependencies with version pinning
+--------------------
+ERROR: failed to solve: process "/bin/sh -c git submodule update --init --recursive" did not complete successfully: exit code: 128
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/3qov97s1x2u034t943pmo4fr7
+PS C:\Users\JeffreyMacDonald\Documents\github\ktransformers>

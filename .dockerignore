@@ -1,0 +1,46 @@
+# Git
+.git/
+.github/
+.gitignore
+.gitmodules
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+eggs/
+.eggs/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Docker
+.dockerignore
+
+# Editor directories and files
+.idea
+.vscode
+*.swp
+*.swo
+
+# Models and data
+models/
+saved_models/
+data/
+logs/
+server.db
+
+# Documentation
+doc/
+docs/
+*.md
+!README*.md
+
+# Keep our wheel directory
+!saved_wheels/

@@ -29,6 +29,12 @@ test_prompt.txt
 project_context.md
 config.yaml
 
+# Environment variables and secrets
+.env
+
+# Build wheels
+/saved_wheels/
+
 # Deployment instructional files
 LOCAL_BUILD.md
 UNRAID_SETUP.md
